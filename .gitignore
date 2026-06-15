@@ -1,0 +1,7 @@
+.env
+node_modules/
+db/query.js
+logs.js
+temp/
+test1.js
+log.txt
