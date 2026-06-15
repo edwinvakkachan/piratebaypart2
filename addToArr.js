@@ -274,6 +274,7 @@ const showResult = await pool.query(`
   WHERE tc.trakt_type = 'tv'
     AND tc.imdb_id IS NOT NULL
     AND tc.tvdb_id IS NOT NULL
+    AND tc.imdb_rating IS NOT NULL
     AND COALESCE(tc.trakt_status,'pending') <> 'added'
 
     -- Not in Sonarr
