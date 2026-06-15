@@ -97,6 +97,7 @@ const shouldRun =await shouldRunYts()
   if(result){
   await sendMissingRadarrToQbit();
   await sendMissingSonarrToQbit();
+  
     }
 
 

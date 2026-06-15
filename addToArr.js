@@ -336,11 +336,11 @@ await axios.post(
   }
 );
 
-      // await pool.query(`
-      //   UPDATE trakt_cache
-      //   SET trakt_status='added'
-      //   WHERE id=$1
-      // `,[show.id]);
+      await pool.query(`
+        UPDATE trakt_cache
+        SET trakt_status='added'
+        WHERE id=$1
+      `,[show.id]);
 
       console.log(
         `✅ Added Show: ${show.clean_title}`
