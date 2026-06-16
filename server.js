@@ -38,25 +38,6 @@ async function main() {
     await initDB();
     console.log("db is ready");
 
-    // await delay(1000);
-    // await piratebayTv();
-    // await delay(1000);
-    // await piratebaymovie();
-    // await delay(1000);
-    // await yts();
-    // await delay(1000);
-    // await eztv();
-
-  // //   if (await shouldRunYts()) {
-  // //     console.log('Running YTS sync...');
-      
-      
-  // //   await updateYtsRunTime();
-  // // }
-
-  // await buildTraktCache();
-  // await populateMetadataFromOMDb(); 
-  // await extractEpisodeAndSeasonDetails();
 
    
   const isRadarrAvailable = await checkRadarr();
@@ -64,6 +45,7 @@ async function main() {
 
   if(isRadarrAvailable && isSonarrAvailable) {
     await updateTmdbIdsForRadarr();
+      await delay(1000,true);
     await updateTvdbIdsForSonarr();
   }
 
@@ -76,12 +58,15 @@ const shouldRun =await shouldRunYts()
   if(isRadarrAvailableagain && isSonarrAvailableagain) {
      if (shouldRun) {
       console.log('Running mediaexclustion table creation sync...');
-//  await syncMediaExclusions();
-
+ await syncMediaExclusions();
+ await updateYtsRunTime();
+  await delay(1000,true);
   }
-   await syncMediaExclusions();
+
     await radarrsonarr(); 
+      await delay(1000,true);
     await sendToArr();
+      await delay(1000,true);
     await sonarrTable();
 
 

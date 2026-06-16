@@ -35,6 +35,7 @@ console.log('running extractEpisodeAndSeasonDetails()')
       SELECT id, title
       FROM piratebay_movie_magnets
       WHERE imdb_id = $1
+       AND season IS NULL
     `, [row.imdb_id]);
 
     for (const show of shows.rows) {

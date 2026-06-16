@@ -15,6 +15,7 @@ export async function syncSonarrEpisodes() {
     FROM radarrsonarr
     WHERE source = 'sonarr'
       AND removed = FALSE
+      AND 'sitescrapeshows' = ANY(radarrsonarr.tag_names)
   `);
 
   let inserted = 0;

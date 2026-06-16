@@ -10,6 +10,25 @@ export async function syncSonarrSeasons() {
   console.log("📚 Syncing Sonarr Seasons");
   console.log("================================");
 
+
+const { data: tags } = await axios.get(
+  `${SONARR_URL}/api/v3/tag`,
+  {
+    headers: {
+      "X-Api-Key": SONARR_API_KEY
+    }
+  }
+);
+
+const tag = tags.find(t => t.label === "sitescrapeshows");
+
+if (!tag) {
+  throw new Error("Tag not found");
+}
+
+
+
+
   const { data: seriesList } = await axios.get(
     `${SONARR_URL}/api/v3/series`,
     {
@@ -19,12 +38,16 @@ export async function syncSonarrSeasons() {
     }
   );
 
+const filteredSeries = seriesList.filter(series =>
+  series.tags.includes(tag.id)
+);
+
   let seasonsProcessed = 0;
 
-  for (const series of seriesList) {
+  for (const series of filteredSeries) {
 
     for (const season of series.seasons || []) {
-        console.log('processing');
+        console.log(`${season.seasonNumber}`);
 
       await pool.query(`
         INSERT INTO radarrsonarr_seasons (
