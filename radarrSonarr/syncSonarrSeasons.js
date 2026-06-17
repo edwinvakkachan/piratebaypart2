@@ -44,10 +44,28 @@ const filteredSeries = seriesList.filter(series =>
 
   let seasonsProcessed = 0;
 
+
+
+
   for (const series of filteredSeries) {
 
-    for (const season of series.seasons || []) {
-        console.log(`${season.seasonNumber}`);
+
+    const validSeasons = (series.seasons || [])
+  .filter(s => s.seasonNumber > 0);
+
+if (validSeasons.length === 0) {
+  continue;
+}
+
+const latestSeason = validSeasons.reduce((max, s) =>
+  s.seasonNumber > max.seasonNumber ? s : max
+);
+
+const season = latestSeason;
+
+
+
+    console.log(`${season.seasonNumber}`);
 
       await pool.query(`
         INSERT INTO radarrsonarr_seasons (
@@ -75,7 +93,10 @@ const filteredSeries = seriesList.filter(series =>
       ]);
 
       seasonsProcessed++;
-    }
+    
+
+
+
   }
 
   console.log(`✅ Seasons processed: ${seasonsProcessed}`);

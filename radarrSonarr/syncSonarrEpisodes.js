@@ -41,11 +41,18 @@ export async function syncSonarrEpisodes() {
         }
       );
 
+const latestSeasonNumber = Math.max(
+  ...episodes.map(ep => ep.seasonNumber)
+);
+
+const latestSeasonEpisodes = episodes.filter(
+  ep => ep.seasonNumber === latestSeasonNumber
+);
 console.log(
-  `📺 ${series.title} (${episodes.length} episodes)`
+  `📺 ${series.title} (${latestSeasonEpisodes.length} episodes)`
 );
 let count = 0;
-      for (const ep of episodes) {
+      for (const ep of latestSeasonEpisodes) {
 
         count++;
 
