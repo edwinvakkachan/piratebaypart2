@@ -68,12 +68,6 @@ const shouldRun =await shouldRunYts()
     await sendToArr();
       await delay(1000,true);
     await sonarrTable();
-
-
-  //      if (shouldRun) {
-  //     console.log('Running sonarrtable creation sync...');
-  //   await updateYtsRunTime();
-  // }
     
   }
   

@@ -188,6 +188,8 @@ const movieResult = await pool.query(`
   WHERE tc.trakt_type = 'movie'
     AND tc.imdb_id IS NOT NULL
     AND tc.tmdb_id IS NOT NULL
+    AND COALESCE(tc.imdb_rating, 0) >= 7
+    AND COALESCE(tc.language, '') ILIKE '%English%'
     AND tc.year >= EXTRACT(YEAR FROM CURRENT_DATE) - 1
     AND COALESCE(tc.trakt_status,'pending') <> 'added'
 
