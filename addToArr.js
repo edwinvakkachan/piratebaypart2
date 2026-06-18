@@ -190,6 +190,8 @@ const movieResult = await pool.query(`
     AND tc.tmdb_id IS NOT NULL
     AND COALESCE(tc.imdb_rating, 0) >= 7
     AND COALESCE(tc.language, '') ILIKE '%English%'
+    AND COALESCE(tc.genre, '') NOT ILIKE '%Documentary%'
+    AND COALESCE(tc.genre, '') NOT ILIKE '%Reality-TV%'
     AND tc.year >= EXTRACT(YEAR FROM CURRENT_DATE) - 1
     AND COALESCE(tc.trakt_status,'pending') <> 'added'
 
@@ -278,6 +280,14 @@ const showResult = await pool.query(`
     AND tc.tvdb_id IS NOT NULL
     AND COALESCE(tc.imdb_rating, 0) >= 7
     AND COALESCE(tc.language, '') ILIKE '%English%'
+    AND NOT (
+    COALESCE(tc.genre, '') ILIKE '%Documentary%'
+    OR COALESCE(tc.genre, '') ILIKE '%Reality-TV%'
+    OR COALESCE(tc.genre, '') ILIKE '%Talk-Show%'
+    OR COALESCE(tc.genre, '') ILIKE '%Game-Show%'
+    OR COALESCE(tc.genre, '') ILIKE '%News%'
+)
+    
     AND COALESCE(tc.trakt_status,'pending') <> 'added'
 
     -- Not in Sonarr
