@@ -188,7 +188,7 @@ const movieResult = await pool.query(`
   WHERE tc.trakt_type = 'movie'
     AND tc.imdb_id IS NOT NULL
     AND tc.tmdb_id IS NOT NULL
-    AND COALESCE(tc.imdb_rating, 0) >= 7
+    AND tc.imdb_rating >= 5
     AND COALESCE(tc.language, '') ILIKE '%English%'
     AND COALESCE(tc.genre, '') NOT ILIKE '%Documentary%'
     AND COALESCE(tc.genre, '') NOT ILIKE '%Reality-TV%'
@@ -278,7 +278,7 @@ const showResult = await pool.query(`
   WHERE tc.trakt_type = 'tv'
     AND tc.imdb_id IS NOT NULL
     AND tc.tvdb_id IS NOT NULL
-    AND COALESCE(tc.imdb_rating, 0) >= 7
+    AND tc.imdb_rating >= 6
     AND COALESCE(tc.language, '') ILIKE '%English%'
     AND NOT (
     COALESCE(tc.genre, '') ILIKE '%Documentary%'
