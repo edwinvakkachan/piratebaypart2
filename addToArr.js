@@ -189,7 +189,7 @@ const movieResult = await pool.query(`
     AND tc.imdb_id IS NOT NULL
     AND tc.tmdb_id IS NOT NULL
     AND tc.imdb_rating >= 5
-    AND COALESCE(tc.language, '') ILIKE '%English%'
+    AND tc.language ILIKE '%English%'
     AND COALESCE(tc.genre, '') NOT ILIKE '%Documentary%'
     AND COALESCE(tc.genre, '') NOT ILIKE '%Reality-TV%'
     AND tc.year >= EXTRACT(YEAR FROM CURRENT_DATE) - 1
@@ -279,7 +279,7 @@ const showResult = await pool.query(`
     AND tc.imdb_id IS NOT NULL
     AND tc.tvdb_id IS NOT NULL
     AND tc.imdb_rating >= 6
-    AND COALESCE(tc.language, '') ILIKE '%English%'
+    AND tc.language ILIKE '%English%'
     AND NOT (
     COALESCE(tc.genre, '') ILIKE '%Documentary%'
     OR COALESCE(tc.genre, '') ILIKE '%Reality-TV%'
