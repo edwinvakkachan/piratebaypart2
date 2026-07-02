@@ -31,9 +31,7 @@ async function main() {
     await log();
 
     console.log("Pirate Bay movie scraping process started");
-    await publishMessage({
-      message: "Pirate Bay movie scraping process started"
-    });
+
 
     await initDB();
     console.log("db is ready");
@@ -81,10 +79,7 @@ async function main() {
 
 
 
-    await publishMessage({
-      message: "Pirate Bay movie scraping completed successfully"
-    });
-
+ 
 
 
     await log();
