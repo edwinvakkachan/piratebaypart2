@@ -38,8 +38,6 @@ async function main() {
     await initDB();
     console.log("db is ready");
 
-
-   
   const isRadarrAvailable = await checkRadarr();
   const isSonarrAvailable = await checkSonarr();
 

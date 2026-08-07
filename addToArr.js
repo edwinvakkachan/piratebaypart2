@@ -229,21 +229,44 @@ const tmdbId = movie.tmdb_id;
 
 
 
-await axios.post(
-  `${RADARR_URL}/api/v3/movie`,
-  {
-    tmdbId,
-    qualityProfileId: movieProfile,
-    rootFolderPath: '/data/2tb/media/English',
-    monitored: false,
-    tags: movieTagIds
-  },
-  {
-    headers: {
-      "X-Api-Key": RADARR_API_KEY
-    }
-  }
-);
+// await axios.post(
+//   `${RADARR_URL}/api/v3/movie`,
+//   {
+//     tmdbId,
+//     qualityProfileId: movieProfile,
+//     rootFolderPath: '/data/2tb/media/English',
+//     monitored: false,
+//     tags: movieTagIds
+//   },
+//   {
+//     headers: {
+//       "X-Api-Key": RADARR_API_KEY
+//     }
+//   }
+// );
+
+    await axios.post(
+        `${process.env.RADARR_URL}/api/v3/movie`,
+        {
+          tmdbId,
+          qualityProfileId: Number(process.env.RADARR_QUALITY_PROFILE_ID),
+          rootFolderPath: process.env.RADARR_ROOT_FOLDERPATH,
+          monitored: false,
+          searchForMovie: false,
+          minimumAvailability: "released",
+          tags: movieTagIds,
+          addOptions: {
+            searchForMovie: false,
+          },
+        },
+        {
+          headers: {
+            "X-Api-Key": process.env.RADARR_API_KEY,
+          },
+        }
+      );
+
+
 
 
       await pool.query(`
