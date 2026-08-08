@@ -8,12 +8,12 @@ const SONARR_URL = process.env.SONARR_URL;
 const SONARR_API_KEY = process.env.SONARR_API_KEY;
 
 const MOVIE_TAGS = [
-  "trackenglish",
+  "piratebay",
   "sitescrapemovies"
 ];
 
 const SHOW_TAGS = [
-  "trackedwin",
+  "piratebay",
   "sitescrapeshows"
 ];
 
