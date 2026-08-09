@@ -236,7 +236,6 @@ if (isSeasonPack && seasonKey) {
 
 await addMagnet(
   value.magnet,
-  value.title,
   category
 );
 

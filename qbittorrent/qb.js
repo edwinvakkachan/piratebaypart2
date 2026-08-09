@@ -37,9 +37,6 @@ export async function addMagnet(
     tags: [...MOVIE_TAGS,`piratebay.${today}`].join(",")
   });
 
-  if (title) {
-    params.set("rename", title);
-  }
 
   await qb.post("/api/v2/torrents/add", params);
 }
