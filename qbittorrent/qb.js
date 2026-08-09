@@ -43,7 +43,7 @@ export async function addMagnet(
 
 export async function moveTorrentToTop() {
   const today = new Date().toISOString().split("T")[0];
-  const expectedTags = [...MOVIE_TAGS, today];
+  const expectedTags = [...MOVIE_TAGS, `piratebay.${today}`];
 
   const { data: torrents } = await qb.get("/api/v2/torrents/info");
 
