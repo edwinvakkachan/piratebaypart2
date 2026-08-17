@@ -51,6 +51,48 @@ function normalizeShowName(title) {
 }
 
 
+function modifyMagnetMetadata(magnet, row) {
+  if (!magnet) return magnet;
+
+  try {
+    const url = new URL(magnet);
+
+    // Extract quality from title
+    const qualityMatch = row.title?.match(
+      /\b(360p|480p|576p|720p|1080p|1440p|2160p|4K)\b/i
+    );
+
+    const quality = qualityMatch
+      ? qualityMatch[1].toLowerCase() === "4k"
+        ? "2160p"
+        : qualityMatch[1]
+      : null;
+
+    // Get language from database
+    const language = row.language?.trim() || "English";
+
+    // Build clean display name
+    const metadata = [
+      row.clean_title || row.title,
+      row.year,
+      quality,
+      language
+    ].filter(Boolean);
+
+    const displayName = metadata.join(" ");
+
+    // Replace the magnet display name
+    url.searchParams.set("dn", displayName);
+
+    return url.toString();
+
+  } catch (error) {
+    console.error("Failed to modify magnet:", error);
+    return magnet;
+  }
+}
+
+
 export async function addToTorrent() {
   try {
    
@@ -234,8 +276,13 @@ if (isSeasonPack && seasonKey) {
 
 
 
+const modifiedMagnet = modifyMagnetMetadata(value.magnet, value);
+
+console.log("Original magnet:", value.magnet);
+console.log("Modified magnet:", modifiedMagnet);
+
 await addMagnet(
-  value.magnet,
+  modifiedMagnet,
   category
 );
 
