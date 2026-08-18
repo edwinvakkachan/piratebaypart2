@@ -2,8 +2,97 @@ import pool from "../db/pool.js";
 import axios from "axios";
 import { radarrToTorrent,SonnarToTorrent } from "../qbittorrent/qb.js";
 // import { extractEpisodeAndSeasonDetails } from "./extractEpisodeAndSeasonDetails.js.js";
+import { addMagnet } from "../qbittorrent/qb.js";
+
+function getQuality(title) {
+  const match = title?.match(
+    /\b(360p|480p|576p|720p|1080p|1440p|2160p|4K)\b/i
+  );
+
+  // Default quality
+  if (!match) {
+    return "1080p";
+  }
+
+  return match[1].toLowerCase() === "4k"
+    ? "2160p"
+    : match[1].toLowerCase();
+}
 
 
+function getLanguage(row) {
+  // If language exists in DB, use it.
+  // Otherwise default to English.
+  if (row.language && row.language.trim()) {
+    return row.language.trim();
+  }
+
+  return "English";
+}
+
+
+function buildTorrentTitle(row) {
+  const cleanTitle = row.clean_title || row.title;
+
+  const quality = getQuality(row.title);
+  const language = getLanguage(row);
+
+  const year = row.year || "";
+
+  // Make title Radarr/Sonarr friendly
+  const safeTitle = cleanTitle
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s+/g, ".");
+
+  return [
+    safeTitle,
+    year,
+    quality,
+    "WEB-DL",
+    language
+  ]
+    .filter(Boolean)
+    .join(".");
+}
+
+
+function modifyMagnetMetadata(magnet, row) {
+  if (!magnet) {
+    return magnet;
+  }
+
+  try {
+    const url = new URL(magnet);
+
+    const torrentTitle = buildTorrentTitle(row);
+
+    // Replace magnet display name
+    url.searchParams.set("dn", torrentTitle);
+
+    const modifiedMagnet = url.toString();
+
+    console.log("Original magnet:");
+    console.log(magnet);
+
+    console.log("Modified magnet:");
+    console.log(modifiedMagnet);
+
+    console.log("Torrent name:");
+    console.log(torrentTitle);
+
+    return modifiedMagnet;
+
+  } catch (error) {
+    console.error(
+      "Failed to modify magnet:",
+      error
+    );
+
+    return magnet;
+  }
+}
 
 
 
@@ -43,16 +132,7 @@ export async function sendMissingRadarrToQbit() {
         `🔍 Searching: ${item.title} (${item.source})`
       );
 
-// const torrentResult = await pool.query(`
-// SELECT *
-// FROM piratebay_movie_magnets
-// WHERE imdb_id = $1
-//   AND CAST(size AS BIGINT) < 1610612736
-//   AND sent_to_qbittorrent = FALSE
-//   AND COALESCE(skipped_duplicate,FALSE) = FALSE
-// ORDER BY seeders DESC
-// LIMIT 1
-// `, [item.imdb_id]);
+
 
 const torrentResult = await pool.query(`
 SELECT *
@@ -92,7 +172,14 @@ LIMIT 1
       );
 
       try {
-        await radarrToTorrent(torrent.magnet);
+
+const category = '2tbEnglish';
+
+const modifiedMagnet = modifyMagnetMetadata(torrent.magnet,torrent);
+
+const torrentTitle = buildTorrentTitle(torrent);
+
+await addMagnet(modifiedMagnet, category,torrentTitle);
 
 
         await pool.query(`

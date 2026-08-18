@@ -56,6 +56,7 @@ function getQuality(title) {
     /\b(360p|480p|576p|720p|1080p|1440p|2160p|4K)\b/i
   );
 
+  // Default quality
   if (!match) {
     return "1080p";
   }
@@ -67,7 +68,13 @@ function getQuality(title) {
 
 
 function getLanguage(row) {
-  return row.language?.trim() || "English";
+  // If language exists in DB, use it.
+  // Otherwise default to English.
+  if (row.language && row.language.trim()) {
+    return row.language.trim();
+  }
+
+  return "English";
 }
 
 
@@ -77,24 +84,59 @@ function buildTorrentTitle(row) {
   const quality = getQuality(row.title);
   const language = getLanguage(row);
 
-  return `${cleanTitle} ${row.year} ${quality} ${language}`;
+  const year = row.year || "";
+
+  // Make title Radarr/Sonarr friendly
+  const safeTitle = cleanTitle
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s+/g, ".");
+
+  return [
+    safeTitle,
+    year,
+    quality,
+    "WEB-DL",
+    language
+  ]
+    .filter(Boolean)
+    .join(".");
 }
 
 
 function modifyMagnetMetadata(magnet, row) {
-  if (!magnet) return magnet;
+  if (!magnet) {
+    return magnet;
+  }
 
   try {
     const url = new URL(magnet);
 
     const torrentTitle = buildTorrentTitle(row);
 
+    // Replace magnet display name
     url.searchParams.set("dn", torrentTitle);
 
-    return url.toString();
+    const modifiedMagnet = url.toString();
+
+    console.log("Original magnet:");
+    console.log(magnet);
+
+    console.log("Modified magnet:");
+    console.log(modifiedMagnet);
+
+    console.log("Torrent name:");
+    console.log(torrentTitle);
+
+    return modifiedMagnet;
 
   } catch (error) {
-    console.error("Failed to modify magnet:", error);
+    console.error(
+      "Failed to modify magnet:",
+      error
+    );
+
     return magnet;
   }
 }
@@ -114,7 +156,6 @@ const result = await pool.query(`
   FROM piratebay_movie_magnets
   WHERE sent_to_qbittorrent = FALSE
   AND COALESCE(skipped_duplicate,FALSE) = FALSE
-  AND media_type = 'movie'
   ORDER BY created_at ASC
 `);
 

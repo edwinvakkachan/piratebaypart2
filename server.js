@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { scrapePirateBayMovieMagnets } from "./extractHomePage.js";
-import { addToTorrent  } from "./addTOTorrent.js";
 import { delay } from "./delay.js";
 import { deleteLargePirateBayTorrents } from "./qbittorrent/torrentCleanUp.js";
 import {
@@ -11,18 +10,14 @@ import { log } from "./timelog.js";
 import { retry } from "./homeassistant/retryWrapper.js";
 import { publishMessage } from "./queue/publishMessage.js";
 import { initDB } from "./db/db.js";
-import { saveMagnets } from "./db/saveMagnets.js";
 import { isQBittorrentAvailable } from "./qbittorrent/qb.js";
-import { yts,updateYtsRunTime,shouldRunYts } from "./yts/yts.js";
 import { eztv } from "./eztv/eztv.js";
 import { buildTraktCache } from "./traktv/traktv.js";
 import { radarrsonarr } from "./radarrSonarr/radarrsonarrsync.js";
 import { sendMissingRadarrToQbit,sendMissingSonarrToQbit } from "./addingtorrents/radarrSonarrToQbit.js";
 import { sendToArr } from "./addToArr.js";
 import { piratebayTv,piratebaymovie } from "./piratebay/piratebay.js";
-import { populateMetadataFromOMDb } from "./omdb/populateMetadataFromOMDb.js";
 import { checkRadarr, checkSonarr } from "./radarrSonarravailabilitycheck.js";
-import { syncMediaExclusions } from "./addingtorrents/syncMediaExclusions.js";
 import { updateTmdbIdsForRadarr,updateTvdbIdsForSonarr } from "./metadata/updateTmdbFromTraktCache.js";
 import { sonarrTable } from "./radarrSonarr/sonarrtable.js";
 import { extractEpisodeAndSeasonDetails } from "./addingtorrents/extractEpisodeAndSeasonDetails.js.js";
