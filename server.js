@@ -45,19 +45,14 @@ async function main() {
     await updateTvdbIdsForSonarr();
   }
 
-// const shouldRun =await shouldRunYts()
+
 
   const isRadarrAvailableagain = await checkRadarr();
   const isSonarrAvailableagain = await checkSonarr();
 
 
   if(isRadarrAvailableagain && isSonarrAvailableagain) {
-//      if (shouldRun) {
-//       console.log('Running mediaexclustion table creation sync...');
-//  await syncMediaExclusions();
-//  await updateYtsRunTime();
-//   await delay(1000,true);
-//   }
+
 
     await radarrsonarr(); 
       await delay(1000,true);

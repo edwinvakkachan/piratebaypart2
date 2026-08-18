@@ -233,22 +233,6 @@ const tmdbId = movie.tmdb_id;
 
 
 
-// await axios.post(
-//   `${RADARR_URL}/api/v3/movie`,
-//   {
-//     tmdbId,
-//     qualityProfileId: movieProfile,
-//     rootFolderPath: '/data/2tb/media/English',
-//     monitored: false,
-//     tags: movieTagIds
-//   },
-//   {
-//     headers: {
-//       "X-Api-Key": RADARR_API_KEY
-//     }
-//   }
-// );
-
     await axios.post(
         `${process.env.RADARR_URL}/api/v3/movie`,
         {
@@ -389,9 +373,7 @@ await axios.post(
         `❌ Show Failed: ${show.clean_title}`
       );
 
-      // console.log(
-      //   err.response?.data || err.message
-      // );
+
     }
   }
 

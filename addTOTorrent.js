@@ -51,38 +51,45 @@ function normalizeShowName(title) {
 }
 
 
+function getQuality(title) {
+  const match = title?.match(
+    /\b(360p|480p|576p|720p|1080p|1440p|2160p|4K)\b/i
+  );
+
+  if (!match) {
+    return "1080p";
+  }
+
+  return match[1].toLowerCase() === "4k"
+    ? "2160p"
+    : match[1].toLowerCase();
+}
+
+
+function getLanguage(row) {
+  return row.language?.trim() || "English";
+}
+
+
+function buildTorrentTitle(row) {
+  const cleanTitle = row.clean_title || row.title;
+
+  const quality = getQuality(row.title);
+  const language = getLanguage(row);
+
+  return `${cleanTitle} ${row.year} ${quality} ${language}`;
+}
+
+
 function modifyMagnetMetadata(magnet, row) {
   if (!magnet) return magnet;
 
   try {
     const url = new URL(magnet);
 
-    // Extract quality from title
-    const qualityMatch = row.title?.match(
-      /\b(360p|480p|576p|720p|1080p|1440p|2160p|4K)\b/i
-    );
+    const torrentTitle = buildTorrentTitle(row);
 
-    const quality = qualityMatch
-      ? qualityMatch[1].toLowerCase() === "4k"
-        ? "2160p"
-        : qualityMatch[1]
-      : null;
-
-    // Get language from database
-    const language = row.language?.trim() || "English";
-
-    // Build clean display name
-    const metadata = [
-      row.clean_title || row.title,
-      row.year,
-      quality,
-      language
-    ].filter(Boolean);
-
-    const displayName = metadata.join(" ");
-
-    // Replace the magnet display name
-    url.searchParams.set("dn", displayName);
+    url.searchParams.set("dn", torrentTitle);
 
     return url.toString();
 
@@ -107,29 +114,9 @@ const result = await pool.query(`
   FROM piratebay_movie_magnets
   WHERE sent_to_qbittorrent = FALSE
   AND COALESCE(skipped_duplicate,FALSE) = FALSE
-    AND (
-      (
-        media_type = 'tv'
-        AND (
-          size IS NULL
-          OR CAST(size AS BIGINT) < ${ONE_GB}
-        )
-      )
-      OR
-      (
-        media_type = 'movie'
-        AND (
-          size IS NULL
-          OR CAST(size AS BIGINT) < ${THREE_GB}
-        )
-        AND CAST(
-          substring(title FROM '(19|20)[0-9]{2}')
-          AS INTEGER
-        ) >= $1
-      )
-    )
+  AND media_type = 'movie'
   ORDER BY created_at ASC
-`, [MIN_MOVIE_YEAR]);
+`);
 
     const rows = result.rows;
 const episodeMap = new Map();
@@ -276,14 +263,17 @@ if (isSeasonPack && seasonKey) {
 
 
 
-const modifiedMagnet = modifyMagnetMetadata(value.magnet, value);
+const modifiedMagnet = modifyMagnetMetadata(
+  value.magnet,
+  value
+);
 
-console.log("Original magnet:", value.magnet);
-console.log("Modified magnet:", modifiedMagnet);
+const torrentTitle = buildTorrentTitle(value);
 
 await addMagnet(
   modifiedMagnet,
-  category
+  category,
+  torrentTitle
 );
 
 
