@@ -27,8 +27,8 @@ export async function loginQB() {
 
 export async function addMagnet(
   magnet,
-  title="",
-  category
+  category,
+  title=""
 ) {
   const today = new Date().toISOString().split("T")[0];
   const params = new URLSearchParams({
