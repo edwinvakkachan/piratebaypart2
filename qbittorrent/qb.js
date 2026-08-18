@@ -28,17 +28,114 @@ export async function loginQB() {
 export async function addMagnet(
   magnet,
   category,
-  title=""
+  title = ""
 ) {
   const today = new Date().toISOString().split("T")[0];
+
   const params = new URLSearchParams({
     urls: magnet,
     category,
-    tags: [...MOVIE_TAGS,`piratebay.${today}`].join(",")
+    tags: [...MOVIE_TAGS, `piratebay.${today}`].join(",")
   });
 
+  // Get torrent hash from magnet
+  const magnetUrl = new URL(magnet);
+  const xt = magnetUrl.searchParams.get("xt");
 
-  await qb.post("/api/v2/torrents/add", params);
+  if (!xt) {
+    throw new Error("Invalid magnet: info hash not found");
+  }
+
+  const hash = xt
+    .replace(/^urn:btih:/i, "")
+    .toLowerCase();
+
+  console.log(`Adding torrent: ${hash}`);
+  console.log(`Desired torrent name: ${title}`);
+
+  // Add magnet
+  await qb.post(
+    "/api/v2/torrents/add",
+    params
+  );
+
+  // If no custom title, nothing else to do
+  if (!title) {
+    return hash;
+  }
+
+  /*
+   * Wait until qBittorrent has created the torrent.
+   * Magnet torrents can initially exist without metadata.
+   */
+  let torrent = null;
+
+  for (let attempt = 1; attempt <= 60; attempt++) {
+    try {
+      const { data } = await qb.get(
+        "/api/v2/torrents/info",
+        {
+          params: {
+            hashes: hash
+          }
+        }
+      );
+
+      if (data.length > 0) {
+        torrent = data[0];
+
+        console.log(
+          `Torrent found after ${attempt}s: ${torrent.name}`
+        );
+
+        break;
+      }
+
+    } catch (error) {
+      console.error(
+        "Error checking torrent:",
+        error.response?.data || error.message
+      );
+    }
+
+    await delay(1000);
+  }
+
+  if (!torrent) {
+    console.error(
+      `Could not find torrent ${hash} after waiting 60 seconds`
+    );
+
+    return hash;
+  }
+
+  /*
+   * Rename torrent in qBittorrent.
+   *
+   * This is the important part.
+   * Changing magnet dn alone is not enough.
+   */
+  try {
+    await qb.post(
+      "/api/v2/torrents/rename",
+      new URLSearchParams({
+        hash: torrent.hash,
+        name: title
+      })
+    );
+
+    console.log(
+      `Torrent renamed: "${torrent.name}" → "${title}"`
+    );
+
+  } catch (error) {
+    console.error(
+      "Failed to rename torrent:",
+      error.response?.data || error.message
+    );
+  }
+
+  return hash;
 }
 
 export async function moveTorrentToTop() {
