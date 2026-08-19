@@ -1,7 +1,7 @@
 import pool from "../db/pool.js";
 import axios from "axios";
 import { addMagnet } from "../qbittorrent/qb.js";
-
+import { selectBestTorrent } from "./selectingBestTorrent.js";
 
 function getQuality(title) {
   const match = title?.match(
@@ -134,23 +134,25 @@ export async function sendMissingRadarrToQbit() {
 
 
 const torrentResult = await pool.query(`
-SELECT *
-FROM piratebay_movie_magnets
-WHERE imdb_id = $1
-  AND sent_to_qbittorrent = FALSE
-  AND COALESCE(skipped_duplicate,FALSE) = FALSE
-ORDER BY seeders DESC
-LIMIT 1
+  SELECT *
+  FROM piratebay_movie_magnets
+  WHERE imdb_id = $1
+    AND sent_to_qbittorrent = FALSE
+  ORDER BY id
 `, [item.imdb_id]);
 
-      if (torrentResult.rows.length === 0) {
+
+   if (torrentResult.rows.length === 0) {
         console.log(item.imdb_id)
         console.log(`❌ No torrent found`);
         notFound++;
         continue;
       }
 
-      const torrent = torrentResult.rows[0];
+const torrent = await selectBestTorrent(torrentResult.rows);
+
+   
+
 
       console.log(
         `✅ Match Found`
@@ -187,13 +189,13 @@ await addMagnet(modifiedMagnet, category,torrentTitle);
           WHERE id = $1
         `, [torrent.id]);
 
-await pool.query(`
-  UPDATE piratebay_movie_magnets
-  SET skipped_duplicate = TRUE
-  WHERE imdb_id = $1
-    AND id <> $2
-    AND sent_to_qbittorrent = FALSE
-`, [torrent.imdb_id, torrent.id]);
+// await pool.query(`
+//   UPDATE piratebay_movie_magnets
+//   SET skipped_duplicate = TRUE
+//   WHERE imdb_id = $1
+//     AND id <> $2
+//     AND sent_to_qbittorrent = FALSE
+// `, [torrent.imdb_id, torrent.id]);
 
         console.log("📥 Sent to qBittorrent");
 
