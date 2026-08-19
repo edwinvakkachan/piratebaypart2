@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { scrapePirateBayMovieMagnets } from "./extractHomePage.js";
 import { delay } from "./delay.js";
 import { deleteLargePirateBayTorrents } from "./qbittorrent/torrentCleanUp.js";
 import {
@@ -11,16 +10,19 @@ import { retry } from "./homeassistant/retryWrapper.js";
 import { publishMessage } from "./queue/publishMessage.js";
 import { initDB } from "./db/db.js";
 import { isQBittorrentAvailable } from "./qbittorrent/qb.js";
-import { eztv } from "./eztv/eztv.js";
 import { buildTraktCache } from "./traktv/traktv.js";
 import { radarrsonarr } from "./radarrSonarr/radarrsonarrsync.js";
-import { sendMissingRadarrToQbit,sendMissingSonarrToQbit } from "./addingtorrents/radarrSonarrToQbit.js";
 import { sendToArr } from "./addToArr.js";
-import { piratebayTv,piratebaymovie } from "./piratebay/piratebay.js";
 import { checkRadarr, checkSonarr } from "./radarrSonarravailabilitycheck.js";
 import { updateTmdbIdsForRadarr,updateTvdbIdsForSonarr } from "./metadata/updateTmdbFromTraktCache.js";
 import { sonarrTable } from "./radarrSonarr/sonarrtable.js";
 import { extractEpisodeAndSeasonDetails } from "./addingtorrents/extractEpisodeAndSeasonDetails.js.js";
+import { sendMissingRadarrToQbit } from "./addingtorrents/radarrTOqbittorrent.js";
+import { sendMissingSonarrToQbit } from "./addingtorrents/sonarrTOqbittorrent.js";
+
+
+
+
 async function main() {
   try {
     await log();
