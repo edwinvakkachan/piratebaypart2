@@ -1,7 +1,7 @@
 import pool from "../db/pool.js";
 import axios from "axios";
 import { addMagnet } from "../qbittorrent/qb.js";
-
+import { selectBestSonarrTorrent } from "./selectingBestSonarrTorrentFile.js";
 
 
 
@@ -49,56 +49,47 @@ console.log(
 );
 
 const torrentResult = await pool.query(`
-SELECT *
-FROM (
-    SELECT *,
-           ROW_NUMBER() OVER (
-               PARTITION BY imdb_id, season, episode
-               ORDER BY seeders DESC
-           ) AS rn
-    FROM piratebay_movie_magnets
-    WHERE imdb_id = $1
-      AND season = $2
-      AND episode = $3
-      AND sent_to_qbittorrent = FALSE
-) t
-WHERE rn = 1
+  SELECT *
+  FROM piratebay_movie_magnets
+  WHERE imdb_id = $1
+    AND season = $2
+    AND episode = $3
+    AND sent_to_qbittorrent = FALSE
 `, [
   item.imdb_id,
   item.season_number,
   item.episode_number
 ]);
-  if (torrentResult.rows.length === 0) {
-        console.log(item.imdb_id)
-        console.log(`❌ No torrent found`);
-        notFound++;
-        continue;
-      }
+
+if (torrentResult.rows.length === 0) {
+  console.log(item.imdb_id);
+  console.log(`❌ No torrent found`);
+  notFound++;
+  continue;
+}
+
+const torrent = await selectBestSonarrTorrent(torrentResult.rows);
+
+if (!torrent) {
+  console.log(`❌ Could not select a torrent`);
+  notFound++;
+  continue;
+}
+
+
+
+console.log(`✅ Best torrent selected:`);
+console.log(`   Torrent : ${torrent.title}`);
+console.log(`   Seeders : ${torrent.seeders}`);
+console.log(
+  `   Size    : ${
+    (Number(torrent.size) / 1024 / 1024 / 1024).toFixed(2)
+  } GB`
+);
 
 // AND CAST(size AS BIGINT) < 1073741824
-     
-for (const torrent of torrentResult.rows){
 
   try {
-
-     console.log(
-        `✅ Match Found`
-      );
-      console.log(
-        `   Torrent : ${torrent.title}, ${torrent.season} ${torrent.episode}`
-      );
-      console.log(
-        `   Seeders : ${torrent.seeders}`
-      );
-      console.log(
-        `   Size    : ${(
-          Number(torrent.size) /
-          1024 /
-          1024 /
-          1024
-        ).toFixed(2)} GB`
-      );
-
 
     await SonnarToTorrent(torrent.magnet)
 
@@ -108,23 +99,15 @@ await pool.query(`
   WHERE id = $1
 `, [torrent.id]);
 
-    await pool.query(`UPDATE piratebay_movie_magnets
-SET skipped_duplicate = TRUE
-WHERE imdb_id = $1
-  AND season = $2
-  AND episode = $3
-  AND id <> $4
-    `, [torrent.imdb_id,torrent.season,torrent.episode,torrent.id]);
 
-
-await pool.query(`
-  UPDATE radarrsonarr_episodes
-  SET grabbed = TRUE,
-      updated_at = NOW()
-  WHERE episode_id = $1
-`, [
-  item.episode_id
-]);
+// await pool.query(`
+//   UPDATE radarrsonarr_episodes
+//   SET grabbed = TRUE,
+//       updated_at = NOW()
+//   WHERE episode_id = $1
+// `, [
+//   item.episode_id
+// ]);
 
 
 
@@ -140,7 +123,10 @@ console.log(
       err.message
     );
   }
-}
+
+
+
+
     }
 
     console.log("");
