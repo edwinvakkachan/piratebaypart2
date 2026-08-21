@@ -150,13 +150,15 @@ export async function sendMissingRadarrToQbit() {
         `🔍 Searching: ${item.title} (${item.source})`
       );
 
-
+const ONE_GB = 1024 * 1024 * 1024;
+const THREE_GB = 3 * ONE_GB;
 
 const torrentResult = await pool.query(`
   SELECT *
   FROM piratebay_movie_magnets
   WHERE imdb_id = $1
     AND sent_to_qbittorrent = FALSE
+    AND CAST(size AS BIGINT) < ${THREE_GB}
   ORDER BY id
 `, [item.imdb_id]);
 

@@ -165,6 +165,9 @@ console.log(
   `IMDb: ${item.imdb_id} S${item.season_number}E${item.episode_number}`
 );
 
+const ONE_GB = 1024 * 1024 * 1024;
+const TWO_GB = 2 * ONE_GB;
+
 const torrentResult = await pool.query(`
   SELECT *
   FROM piratebay_movie_magnets
@@ -172,6 +175,7 @@ const torrentResult = await pool.query(`
     AND season = $2
     AND episode = $3
     AND sent_to_qbittorrent = FALSE
+    AND CAST(size AS BIGINT) < ${TWO_GB}
 `, [
   item.imdb_id,
   item.season_number,
