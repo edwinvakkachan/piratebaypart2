@@ -230,7 +230,7 @@ console.log(
 
 await pool.query(`
   UPDATE piratebay_movie_magnets
-  SET sent_to_qbittorrent = FALSE
+  SET sent_to_qbittorrent = TRUE
   WHERE id = $1
 `, [torrent.id]);
 
