@@ -5,6 +5,123 @@ import { selectBestSonarrTorrent } from "./selectingBestSonarrTorrentFile.js";
 
 
 
+function getQuality(title) {
+  const match = title?.match(
+    /\b(360p|480p|576p|720p|1080p|1440p|2160p|4K)\b/i
+  );
+
+  if (!match) {
+    return "1080p";
+  }
+
+  return match[1].toLowerCase() === "4k"
+    ? "2160p"
+    : match[1].toLowerCase();
+}
+
+
+function getLanguage(row) {
+  if (row?.language && row.language.trim()) {
+    return row.language.trim();
+  }
+
+  return "English";
+}
+
+
+function cleanTitle(title) {
+  if (!title) {
+    return "";
+  }
+
+  return title
+    .replace(/[._-]+/g, " ")
+    .replace(/[:/\\|*?"<>]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s+/g, ".");
+}
+
+
+/**
+ * Build a Sonarr-friendly torrent name.
+ *
+ * IMPORTANT:
+ * Series title and episode title come from our DB,
+ * NOT from the torrent title.
+ */
+function buildSonarrTorrentTitle(item, torrent) {
+  if (!item?.series_title) {
+    throw new Error("Series title is missing");
+  }
+
+  if (!item?.title) {
+    throw new Error("Episode title is missing");
+  }
+
+  const seriesTitle = cleanTitle(item.series_title);
+  const episodeTitle = cleanTitle(item.title);
+
+  const season = `S${String(item.season_number).padStart(2, "0")}`;
+  const episode = `E${String(item.episode_number).padStart(2, "0")}`;
+
+  const quality = getQuality(torrent?.title);
+  const language = getLanguage(torrent);
+
+  return [
+    seriesTitle,
+    `${season}${episode}`,
+    episodeTitle,
+    quality,
+    "WEB-DL",
+    language
+  ]
+    .filter(Boolean)
+    .join(".");
+}
+
+
+function modifySonarrMagnetMetadata(magnet, item, torrent) {
+  if (!magnet) {
+    return magnet;
+  }
+
+  try {
+    const url = new URL(magnet);
+
+    const torrentTitle = buildSonarrTorrentTitle(
+      item,
+      torrent
+    );
+
+    // Replace magnet display name
+    url.searchParams.set("dn", torrentTitle);
+
+    const modifiedMagnet = url.toString();
+
+    console.log("Original magnet:");
+    console.log(magnet);
+
+    console.log("Modified magnet:");
+    console.log(modifiedMagnet);
+
+    console.log("Torrent name:");
+    console.log(torrentTitle);
+
+    return modifiedMagnet;
+
+  } catch (error) {
+    console.error(
+      "Failed to modify Sonarr magnet:",
+      error
+    );
+
+    return magnet;
+  }
+}
+
+
+
 export async function sendMissingSonarrToQbit(){
   try {
   console.log("========================================");
@@ -91,11 +208,29 @@ console.log(
 
   try {
 
-    await SonnarToTorrent(torrent.magnet)
+    // await SonnarToTorrent(torrent.magnet)
+     const modifiedMagnet = modifySonarrMagnetMetadata(
+    torrent.magnet,
+    item,
+    torrent
+  );
+
+  const torrentTitle = buildSonarrTorrentTitle(
+    item,
+    torrent
+  );
+
+  const category = "qbit4tbTV";
+
+  await addMagnet(
+    modifiedMagnet,
+    category,
+    torrentTitle
+  );
 
 await pool.query(`
   UPDATE piratebay_movie_magnets
-  SET sent_to_qbittorrent = TRUE
+  SET sent_to_qbittorrent = FALSE
   WHERE id = $1
 `, [torrent.id]);
 
