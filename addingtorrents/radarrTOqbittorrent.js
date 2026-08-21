@@ -3,12 +3,12 @@ import axios from "axios";
 import { addMagnet } from "../qbittorrent/qb.js";
 import { selectBestTorrent } from "./selectingBestTorrent.js";
 
+
 function getQuality(title) {
   const match = title?.match(
     /\b(360p|480p|576p|720p|1080p|1440p|2160p|4K)\b/i
   );
 
-  // Default quality
   if (!match) {
     return "1080p";
   }
@@ -20,9 +20,7 @@ function getQuality(title) {
 
 
 function getLanguage(row) {
-  // If language exists in DB, use it.
-  // Otherwise default to English.
-  if (row.language && row.language.trim()) {
+  if (row?.language && row.language.trim()) {
     return row.language.trim();
   }
 
@@ -30,20 +28,38 @@ function getLanguage(row) {
 }
 
 
-function buildTorrentTitle(row) {
-  const cleanTitle = row.clean_title || row.title;
+/**
+ * Build the torrent display/name using:
+ *
+ *   Radarr title + Radarr year
+ *   Torrent quality + language
+ *
+ * This is important because the torrent title may contain
+ * a different/inaccurate movie title or year.
+ */
+function buildTorrentTitle(radarrItem, torrent) {
+  if (!radarrItem?.title) {
+    throw new Error("Radarr movie title is missing");
+  }
 
-  const quality = getQuality(row.title);
-  const language = getLanguage(row);
-
-  const year = row.year || "";
-
-  // Make title Radarr/Sonarr friendly
-  const safeTitle = cleanTitle
+  // ALWAYS use the title from Radarr
+  const cleanTitle = radarrItem.title
     .replace(/[._-]+/g, " ")
+    .replace(/[:/\\|*?"<>]/g, " ")
     .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\s+/g, ".");
+    .trim();
+
+  // Convert spaces to dots for Radarr-friendly naming
+  const safeTitle = cleanTitle.replace(/\s+/g, ".");
+
+  // Quality comes from the actual torrent
+  const quality = getQuality(torrent?.title);
+
+  // Language comes from torrent metadata
+  const language = getLanguage(torrent);
+
+  // Year ALWAYS comes from Radarr
+  const year = radarrItem.year || "";
 
   return [
     safeTitle,
@@ -57,7 +73,7 @@ function buildTorrentTitle(row) {
 }
 
 
-function modifyMagnetMetadata(magnet, row) {
+function modifyMagnetMetadata(magnet, radarrItem, torrent) {
   if (!magnet) {
     return magnet;
   }
@@ -65,9 +81,9 @@ function modifyMagnetMetadata(magnet, row) {
   try {
     const url = new URL(magnet);
 
-    const torrentTitle = buildTorrentTitle(row);
+    const torrentTitle = buildTorrentTitle(radarrItem, torrent);
 
-    // Replace magnet display name
+    // Change magnet display name
     url.searchParams.set("dn", torrentTitle);
 
     const modifiedMagnet = url.toString();
@@ -92,6 +108,9 @@ function modifyMagnetMetadata(magnet, row) {
     return magnet;
   }
 }
+
+
+
 
 
 
@@ -174,13 +193,30 @@ const torrent = await selectBestTorrent(torrentResult.rows);
 
       try {
 
-const category = '2tbEnglish';
 
-const modifiedMagnet = modifyMagnetMetadata(torrent.magnet,torrent);
+const category = "2tbEnglish";
 
-const torrentTitle = buildTorrentTitle(torrent);
+// IMPORTANT:
+// radarrItem = official Radarr metadata
+// torrent    = selected torrent metadata
 
-await addMagnet(modifiedMagnet, category,torrentTitle);
+const modifiedMagnet = modifyMagnetMetadata(
+  torrent.magnet,
+  item,
+  torrent
+);
+
+const torrentTitle = buildTorrentTitle(
+  item,
+  torrent
+);
+
+await addMagnet(
+  modifiedMagnet,
+  category,
+  torrentTitle
+);
+
 
 
         await pool.query(`
@@ -189,13 +225,7 @@ await addMagnet(modifiedMagnet, category,torrentTitle);
           WHERE id = $1
         `, [torrent.id]);
 
-// await pool.query(`
-//   UPDATE piratebay_movie_magnets
-//   SET skipped_duplicate = TRUE
-//   WHERE imdb_id = $1
-//     AND id <> $2
-//     AND sent_to_qbittorrent = FALSE
-// `, [torrent.imdb_id, torrent.id]);
+
 
         console.log("📥 Sent to qBittorrent");
 
